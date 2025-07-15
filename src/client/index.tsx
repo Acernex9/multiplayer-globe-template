@@ -104,6 +104,7 @@ function App() {
         ref={canvasRef as LegacyRef<HTMLCanvasElement>}
         style={{ width: 400, height: 400, maxWidth: "100%", aspectRatio: 1 }}
       />
+<p>
        <button
   onClick={() => {
     socket.send(
@@ -115,6 +116,8 @@ function App() {
 >
   Thumbs up +1
 </button>   
+
+</p>
       {/* Let's give some credit */}
       <p>
         Powered by <a href="https://cobe.vercel.app/">🌏 Cobe</a>,{" "}
