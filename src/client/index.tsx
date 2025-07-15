@@ -98,13 +98,23 @@ function App() {
       ) : (
         <p>&nbsp;</p>
       )}
-
+      
       {/* The canvas where we'll render the globe */}
       <canvas
         ref={canvasRef as LegacyRef<HTMLCanvasElement>}
         style={{ width: 400, height: 400, maxWidth: "100%", aspectRatio: 1 }}
       />
-
+       <button
+  onClick={() => {
+    socket.send(
+      JSON.stringify({
+        type: "add-marker", // or use "increment" if you separate logic later
+      })
+    );
+  }}
+>
+  Add to global counter
+</button>   
       {/* Let's give some credit */}
       <p>
         Powered by <a href="https://cobe.vercel.app/">🌏 Cobe</a>,{" "}
