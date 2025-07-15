@@ -8,6 +8,9 @@ type ConnectionState = {
   position: Position;
 };
 
+// 🆕 This is the global counter that will persist in memory across connections
+let globalCounter = 0;
+
 export class Globe extends Server {
   onConnect(conn: Connection<ConnectionState>, ctx: ConnectionContext) {
     // Whenever a fresh connection is made, we'll
@@ -54,6 +57,32 @@ export class Globe extends Server {
         this.onCloseOrError(conn);
       }
     }
+
+    // 🆕 Send the current global counter to the new client
+    conn.send(
+      JSON.stringify({
+        type: "counter-update",
+        value: globalCounter,
+      })
+    );
+  }
+
+  // 🆕 Whenever a client sends a message (like pressing the increment button)
+  onMessage(conn: Connection<ConnectionState>, message: string | ArrayBuffer) {
+    const data = JSON.parse(message.toString());
+
+    // 🆕 Handle increment-counter messages
+    if (data.type === "increment-counter") {
+      globalCounter++;
+
+      // 🆕 Broadcast the new value to all clients
+      this.broadcast(
+        JSON.stringify({
+          type: "counter-update",
+          value: globalCounter,
+        })
+      );
+    }
   }
 
   // Whenever a connection closes (or errors), we'll broadcast a message to all
@@ -77,6 +106,7 @@ export class Globe extends Server {
   }
 }
 
+// This is the PartyServer fetch handler that handles HTTP/WebSocket requests
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     return (
