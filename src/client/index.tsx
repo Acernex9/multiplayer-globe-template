@@ -12,12 +12,14 @@ import type { LegacyRef } from "react";
 function App() {
   // A reference to the canvas element where we'll render the globe
   const canvasRef = useRef<HTMLCanvasElement>();
-  // The number of markers we're currently displaying
-  const [counter, setCounter] = useState(0);
+
+  // The number of markers (connected users) on the globe
+  const [markerCount, setMarkerCount] = useState(0);
+
+  // 🆕 Separate state for the global thumbs-up counter
+  const [thumbsUpCount, setThumbsUpCount] = useState(0);
+
   // A map of marker IDs to their positions
-  // Note that we use a ref because the globe's `onRender` callback
-  // is called on every animation frame, and we don't want to re-render
-  // the component on every frame.
   const positions = useRef<
     Map<
       string,
@@ -27,32 +29,38 @@ function App() {
       }
     >
   >(new Map());
+
   // Connect to the PartyServer server
   const socket = usePartySocket({
     room: "default",
     party: "globe",
     onMessage(evt) {
       const message = JSON.parse(evt.data as string) as OutgoingMessage;
+
       if (message.type === "add-marker") {
         // Add the marker to our map
         positions.current.set(message.position.id, {
           location: [message.position.lat, message.position.lng],
           size: message.position.id === socket.id ? 0.1 : 0.05,
         });
-        // Update the counter
-        setCounter((c) => c + 1);
-      } else {
+        // Update the marker counter
+        setMarkerCount((c) => c + 1);
+      } else if (message.type === "remove-marker") {
         // Remove the marker from our map
         positions.current.delete(message.id);
-        // Update the counter
-        setCounter((c) => c - 1);
+        // Update the marker counter
+        setMarkerCount((c) => c - 1);
+      }
+
+      // 🆕 Handle global thumbs-up counter from server
+      else if (message.type === "counter-update") {
+        setThumbsUpCount(message.value); // Set the new global thumbs-up count
       }
     },
   });
 
   useEffect(() => {
     // The angle of rotation of the globe
-    // We'll update this on every frame to make the globe spin
     let phi = 0;
 
     const globe = createGlobe(canvasRef.current as HTMLCanvasElement, {
@@ -71,13 +79,8 @@ function App() {
       markers: [],
       opacity: 0.7,
       onRender: (state) => {
-        // Called on every animation frame.
-        // `state` will be an empty object, return updated params.
-
-        // Get the current positions from our map
+        // Called on every animation frame
         state.markers = [...positions.current.values()];
-
-        // Rotate the globe
         state.phi = phi;
         phi += 0.01;
       },
@@ -91,40 +94,47 @@ function App() {
   return (
     <div className="App">
       <h1>Where's everyone at?</h1>
-      {counter !== 0 ? (
+
+      {/* Connected user count */}
+      {markerCount !== 0 ? (
         <p>
-          <b>{counter}</b> {counter === 1 ? "person" : "people"} connected.
+          <b>{markerCount}</b> {markerCount === 1 ? "person" : "people"} connected.
         </p>
       ) : (
         <p>&nbsp;</p>
       )}
-      
-      {/* The canvas where we'll render the globe */}
+
+      {/* Globe canvas */}
       <canvas
         ref={canvasRef as LegacyRef<HTMLCanvasElement>}
         style={{ width: 400, height: 400, maxWidth: "100%", aspectRatio: 1 }}
       />
-<p>
-       <button
-  onClick={() => {
-    socket.send(
-      JSON.stringify({
-        type: "add-marker", // or use "increment" if you separate logic later
-      })
-    );
-  }}
->
-  Thumbs up +1
-</button>   
 
-</p>
-      {/* Let's give some credit */}
+      {/* 🆕 Thumbs up button and display */}
+      <p>
+        <button
+          onClick={() => {
+            socket.send(
+              JSON.stringify({
+                type: "increment-counter",
+              })
+            );
+          }}
+        >
+          👍 Thumbs up +1
+        </button>
+        <br />
+        <b>{thumbsUpCount}</b> total thumbs up
+      </p>
+
+      {/* Credits */}
       <p>
         Powered by <a href="https://cobe.vercel.app/">🌏 Cobe</a>,{" "}
         <a href="https://www.npmjs.com/package/phenomenon">Phenomenon</a> and{" "}
         <a href="https://npmjs.com/package/partyserver/">🎈 PartyServer</a>
         <br />
-        Alex He dedicates this to <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Inspiration</a>
+        Alex He dedicates this to{" "}
+        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Inspiration</a>
       </p>
     </div>
   );
