@@ -110,6 +110,7 @@ function App() {
         Powered by <a href="https://cobe.vercel.app/">🌏 Cobe</a>,{" "}
         <a href="https://www.npmjs.com/package/phenomenon">Phenomenon</a> and{" "}
         <a href="https://npmjs.com/package/partyserver/">🎈 PartyServer</a>
+        <br> Alex He dedicates this to <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"> Inspiration</a> </br>
       </p>
     </div>
   );
