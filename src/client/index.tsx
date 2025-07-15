@@ -113,7 +113,7 @@ function App() {
     );
   }}
 >
-  Add to global counter
+  Thumbs up +1
 </button>   
       {/* Let's give some credit */}
       <p>
