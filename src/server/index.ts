@@ -1,5 +1,4 @@
 import { routePartykitRequest, Server } from "partyserver";
-
 import type { OutgoingMessage, Position } from "../shared";
 import type { Connection, ConnectionContext } from "partyserver";
 
@@ -12,6 +11,9 @@ type ConnectionState = {
 let globalCounter = 0;
 
 export class Globe extends Server {
+  // 🆕 Track if we're already batching a broadcast
+  counterUpdateScheduled = false;
+
   onConnect(conn: Connection<ConnectionState>, ctx: ConnectionContext) {
     // Whenever a fresh connection is made, we'll
     // send the entire state to the new connection
@@ -29,9 +31,7 @@ export class Globe extends Server {
       id: conn.id,
     };
     // And save this on the connection's state
-    conn.setState({
-      position,
-    });
+    conn.setState({ position });
 
     // Now, let's send the entire state to the new connection
     for (const connection of this.getConnections<ConnectionState>()) {
@@ -58,7 +58,7 @@ export class Globe extends Server {
       }
     }
 
-    // 🆕 Send the current global counter to the new client
+    // 🆕 Send the current global thumbs-up count to the new connection
     conn.send(
       JSON.stringify({
         type: "counter-update",
@@ -67,21 +67,26 @@ export class Globe extends Server {
     );
   }
 
-  // 🆕 Whenever a client sends a message (like pressing the increment button)
   onMessage(conn: Connection<ConnectionState>, message: string | ArrayBuffer) {
     const data = JSON.parse(message.toString());
 
-    // 🆕 Handle increment-counter messages
     if (data.type === "increment-counter") {
       globalCounter++;
 
-      // 🆕 Broadcast the new value to all clients
-      this.broadcast(
-        JSON.stringify({
-          type: "counter-update",
-          value: globalCounter,
-        })
-      );
+      // 🆕 Throttle broadcast: only send updates every 50ms
+      if (!this.counterUpdateScheduled) {
+        this.counterUpdateScheduled = true;
+
+        setTimeout(() => {
+          this.counterUpdateScheduled = false;
+          this.broadcast(
+            JSON.stringify({
+              type: "counter-update",
+              value: globalCounter,
+            })
+          );
+        }, 50);
+      }
     }
   }
 
@@ -106,7 +111,6 @@ export class Globe extends Server {
   }
 }
 
-// This is the PartyServer fetch handler that handles HTTP/WebSocket requests
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     return (
