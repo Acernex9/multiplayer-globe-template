@@ -129,6 +129,10 @@ function App() {
         </button>
         <br />
         <b>{thumbsUpCount}</b> total thumbs up
+        <br />
+          <span style={{ fontSize: "0.8em", color: "gray" }}>
+            That's {Math.round(thumbsUpCount / (Date.now() / 1000))} thumbs up's per second!
+        </span>
       </p>
 
       <p>
