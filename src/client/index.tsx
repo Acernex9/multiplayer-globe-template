@@ -129,12 +129,8 @@ function App() {
 
       {/* Credits */}
       <p>
-        Powered by <a href="https://cobe.vercel.app/">🌏 Cobe</a>,{" "}
-        <a href="https://www.npmjs.com/package/phenomenon">Phenomenon</a> and{" "}
-        <a href="https://npmjs.com/package/partyserver/">🎈 PartyServer</a>
-        <br />
         Alex He dedicates this to{" "}
-        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Inspiration</a>
+        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Don't Click 👀</a>
       </p>
     </div>
   );
