@@ -16,8 +16,9 @@ function App() {
   // The number of markers (connected users) on the globe
   const [markerCount, setMarkerCount] = useState(0);
 
-  // 🆕 Separate state for the global thumbs-up counter
+  // 🆕 Global thumbs-up count
   const [thumbsUpCount, setThumbsUpCount] = useState(0);
+  const latestThumbsUp = useRef(0); // 🆕 holds incoming updates without flooding React
 
   // A map of marker IDs to their positions
   const positions = useRef<
@@ -43,24 +44,30 @@ function App() {
           location: [message.position.lat, message.position.lng],
           size: message.position.id === socket.id ? 0.1 : 0.05,
         });
-        // Update the marker counter
         setMarkerCount((c) => c + 1);
       } else if (message.type === "remove-marker") {
         // Remove the marker from our map
         positions.current.delete(message.id);
-        // Update the marker counter
         setMarkerCount((c) => c - 1);
       }
 
-      // 🆕 Handle global thumbs-up counter from server
+      // 🆕 Handle incoming thumbs-up update
       else if (message.type === "counter-update") {
-        setThumbsUpCount(message.value); // Set the new global thumbs-up count
+        latestThumbsUp.current = message.value; // do NOT immediately call setState
       }
     },
   });
 
+  // 🆕 Update UI every 50ms based on the latest counter value
   useEffect(() => {
-    // The angle of rotation of the globe
+    const interval = setInterval(() => {
+      setThumbsUpCount(latestThumbsUp.current);
+    }, 50); // update UI 20 times/sec
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     let phi = 0;
 
     const globe = createGlobe(canvasRef.current as HTMLCanvasElement, {
@@ -79,7 +86,6 @@ function App() {
       markers: [],
       opacity: 0.7,
       onRender: (state) => {
-        // Called on every animation frame
         state.markers = [...positions.current.values()];
         state.phi = phi;
         phi += 0.01;
@@ -95,7 +101,6 @@ function App() {
     <div className="App">
       <h1>Where's everyone at?</h1>
 
-      {/* Connected user count */}
       {markerCount !== 0 ? (
         <p>
           <b>{markerCount}</b> {markerCount === 1 ? "person" : "people"} connected.
@@ -104,13 +109,12 @@ function App() {
         <p>&nbsp;</p>
       )}
 
-      {/* Globe canvas */}
       <canvas
         ref={canvasRef as LegacyRef<HTMLCanvasElement>}
         style={{ width: 400, height: 400, maxWidth: "100%", aspectRatio: 1 }}
       />
 
-      {/* 🆕 Thumbs up button and display */}
+      {/* 🆕 Global thumbs-up button */}
       <p>
         <button
           onClick={() => {
@@ -127,14 +131,12 @@ function App() {
         <b>{thumbsUpCount}</b> total thumbs up
       </p>
 
-      {/* Credits */}
       <p>
         Alex He dedicates this to{" "}
-        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Don't Click 👀</a>
+        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Inspiration</a>
       </p>
     </div>
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 createRoot(document.getElementById("root")!).render(<App />);
