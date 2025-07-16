@@ -137,7 +137,7 @@ function App() {
 
       <p>
         Alex He dedicates this to{" "}
-        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Inspiration</a>
+        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Don't Click 👀</a>
       </p>
     </div>
   );
