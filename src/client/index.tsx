@@ -53,10 +53,32 @@ function ChessGame() {
     return move !== null;
   }
 
+  function handleReset() {
+    const newGame = new Chess();
+    setGame(newGame);
+    setFen(newGame.fen());
+    socket.send(
+      JSON.stringify({
+        type: "chess-sync",
+        fen: newGame.fen(),
+      })
+    );
+  }
+
+  const currentTurn = game.turn() === "w" ? "White" : "Black";
+
   return (
     <div>
       <h1>Chess Section</h1>
-      <Chessboard position={fen} onPieceDrop={onDrop} boardWidth={320} />
+      <button onClick={handleReset} style={{ marginBottom: 16 }}>Reset Game</button>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 340 }}>
+        <div style={{ marginRight: 24 }}>
+          <Chessboard position={fen} onPieceDrop={onDrop} boardWidth={320} />
+        </div>
+        <div style={{ color: "white", fontSize: 20, minWidth: 120, textAlign: "left" }}>
+          <div><b>Turn:</b> {currentTurn}</div>
+        </div>
+      </div>
     </div>
   );
 }
