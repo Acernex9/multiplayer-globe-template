@@ -65,18 +65,45 @@ function ChessGame() {
     );
   }
 
+  function handleRewind() {
+    const newGame = new Chess(game.fen());
+    if (newGame.history().length > 0) {
+      newGame.undo();
+      setGame(newGame);
+      setFen(newGame.fen());
+      socket.send(
+        JSON.stringify({
+          type: "chess-sync",
+          fen: newGame.fen(),
+        })
+      );
+    }
+  }
+
   const currentTurn = game.turn() === "w" ? "White" : "Black";
+  let gameStatus = "";
+  if (game.isGameOver()) {
+    if (game.isCheckmate()) {
+      gameStatus = `Checkmate! ${currentTurn === "White" ? "Black" : "White"} wins.`;
+    } else if (game.isDraw()) {
+      gameStatus = "Draw!";
+    } else {
+      gameStatus = "Game over!";
+    }
+  }
 
   return (
     <div>
       <h1>Chess Section</h1>
-      <button onClick={handleReset} style={{ marginBottom: 16 }}>Reset Game</button>
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 340 }}>
-        <div style={{ marginRight: 24 }}>
-          <Chessboard position={fen} onPieceDrop={onDrop} boardWidth={320} />
-        </div>
-        <div style={{ color: "white", fontSize: 20, minWidth: 120, textAlign: "left" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <button onClick={handleReset}>Reset Game</button>
+        <button onClick={handleRewind}>Rewind</button>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minHeight: 340 }}>
+        <Chessboard position={fen} onPieceDrop={onDrop} boardWidth={320} />
+        <div style={{ color: "white", fontSize: 20, minWidth: 120, textAlign: "center", marginTop: 16 }}>
           <div><b>Turn:</b> {currentTurn}</div>
+          {gameStatus && <div style={{ marginTop: 8, color: "#ffb347" }}>{gameStatus}</div>}
         </div>
       </div>
     </div>
