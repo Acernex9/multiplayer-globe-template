@@ -1,5 +1,5 @@
 import { routePartykitRequest, Server } from "partyserver";
-import type { OutgoingMessage, Position } from "../shared";
+import type { OutgoingMessage, Position, ChessMessage } from "../shared";
 import type { Connection, ConnectionContext } from "partyserver";
 
 // This is the state that we'll store on each connection
@@ -9,6 +9,9 @@ type ConnectionState = {
 
 // 🆕 This is the global counter that will persist in memory across connections
 let globalCounter = 0;
+
+// ♟️ Global chess FEN state
+let chessFEN = "start";
 
 export class Globe extends Server {
   // 🆕 Track if we're already batching a broadcast
@@ -65,6 +68,14 @@ export class Globe extends Server {
         value: globalCounter,
       })
     );
+
+    // ♟️ Send the current chess board state to the new connection
+    conn.send(
+      JSON.stringify({
+        type: "chess-sync",
+        fen: chessFEN,
+      } as ChessMessage)
+    );
   }
 
   onMessage(conn: Connection<ConnectionState>, message: string | ArrayBuffer) {
@@ -87,6 +98,18 @@ export class Globe extends Server {
           );
         }, 50);
       }
+    }
+    // ♟️ Handle chess moves
+    else if (data.type === "chess-move") {
+      chessFEN = data.fen;
+      this.broadcast(
+        JSON.stringify({
+          type: "chess-move",
+          from: data.from,
+          to: data.to,
+          fen: data.fen,
+        } as ChessMessage)
+      );
     }
   }
 

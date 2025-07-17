@@ -15,4 +15,22 @@ export type OutgoingMessage =
   | {
       type: "remove-marker";
       id: string;
+    }
+  | {
+      type: "counter-update";
+      value: number;
     };
+
+export type ChessMoveMessage = {
+  type: "chess-move";
+  from: string;
+  to: string;
+  fen: string;
+};
+
+export type ChessSyncMessage = {
+  type: "chess-sync";
+  fen: string;
+};
+
+export type ChessMessage = ChessMoveMessage | ChessSyncMessage;

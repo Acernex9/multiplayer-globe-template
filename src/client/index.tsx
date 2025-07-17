@@ -2,14 +2,87 @@ import "./styles.css";
 
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import createGlobe from "cobe";
 import usePartySocket from "partysocket/react";
 
 // The type of messages we'll be receiving from the server
 import type { OutgoingMessage } from "../shared";
 import type { LegacyRef } from "react";
+import type { ChessMessage } from "../shared";
 
+import { Chessboard } from "react-chessboard";
+import { Chess } from "chess.js";
+
+// Rename Chess component to ChessGame to avoid import conflict
+function ChessGame() {
+  const [game, setGame] = React.useState(() => new Chess());
+  const [fen, setFen] = React.useState(() => game.fen());
+  const socket = usePartySocket({
+    room: "chess",
+    party: "globe",
+    onMessage(evt) {
+      const message = JSON.parse(evt.data as string) as ChessMessage;
+      if (message.type === "chess-move") {
+        const newGame = new Chess(message.fen);
+        setGame(newGame);
+        setFen(newGame.fen());
+      } else if (message.type === "chess-sync") {
+        const newGame = new Chess(message.fen);
+        setGame(newGame);
+        setFen(newGame.fen());
+      }
+    },
+  });
+
+  function onDrop(sourceSquare: string, targetSquare: string) {
+    const newGame = new Chess(game.fen());
+    const move = newGame.move({ from: sourceSquare, to: targetSquare, promotion: "q" });
+    if (move) {
+      setGame(newGame);
+      setFen(newGame.fen());
+      socket.send(
+        JSON.stringify({
+          type: "chess-move",
+          from: sourceSquare,
+          to: targetSquare,
+          fen: newGame.fen(),
+        })
+      );
+    }
+    return move !== null;
+  }
+
+  return (
+    <div>
+      <h1>Chess Section</h1>
+      <Chessboard position={fen} onPieceDrop={onDrop} boardWidth={320} />
+    </div>
+  );
+}
+
+// Refactored App with header and routing
 function App() {
+  return (
+    <Router>
+      <div className="App">
+        <header style={{ marginBottom: 32 }}>
+          <nav>
+            <Link to="/" style={{ marginRight: 16 }}>Home</Link>
+            <Link to="/chess">Chess</Link>
+          </nav>
+        </header>
+        <Routes>
+          <Route path="/" element={<GlobeHome />} />
+          <Route path="/chess" element={<ChessGame />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+// Extracted the original globe app as GlobeHome
+function GlobeHome() {
   // A reference to the canvas element where we'll render the globe
   const canvasRef = useRef<HTMLCanvasElement>();
 
